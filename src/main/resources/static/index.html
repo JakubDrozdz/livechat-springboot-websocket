@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+    <title>Chat GG Style</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .chat-messages {
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+
+        .message {
+            background-color: #e2e2e2;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: #fff;
+            align-self: flex-end;
+        }
+        .friend-message {
+            background-color: #8bc7fa;
+            color: #211a1a;
+            align-self: flex-end;
+        }
+
+        .partner-message {
+            background-color: #4CAF50;
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        .message-input-container {
+            display: flex;
+            background-color: #f2f2f2;
+            padding: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        .send-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="message-input-container">
+        <input type="text" class="user" id="user" placeholder="Nazwa uzytkownika">
+        <button class="connect-button" onclick="connectWithBroker()">Połącz</button>
+    </div>
+
+    <div class="chat-header">
+        Gadu-Gadu Chat
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <!-- Tutaj będą wyświetlane wiadomości -->
+    </div>
+    <div class="message-input-container">
+        <input type="text" class="message-input" id="message-input" placeholder="Wpisz wiadomość">
+        <button class="send-button" id="send-button">Wyślij</button>
+    </div>
+</div>
+
+<script>
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    const user = document.getElementById('user');
+    let stompClient;
+
+    function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                var messageToSend = {
+                    username: user.value.trim(),
+                    message: message
+                };
+                stompClient.send('/app/send-message', {}, JSON.stringify(messageToSend));
+                messageInput.value = '';
+            }
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+
+    function onMessage(payload) {
+        console.log('pauload');
+        console.log(payload.body);
+        var message = JSON.parse(payload.body);
+
+        const messageElement = document.createElement('div');
+        if(message.username == user.value.trim()){
+            messageElement.className = 'message user-message';
+        }else{
+            messageElement.className = 'message friend-message';
+        }
+        console.log('message json');
+        console.log(message);
+        messageElement.innerHTML = '<div>'+message.message + '</div><div style=\"display: inline-block; text-align: right; width: 100%;\"><span style=\"font-size: 15px; color: yellow;\">' + message.username + '</span></div>';
+        chatMessages.appendChild(messageElement);
+    }
+
+    function onConnect() {
+        stompClient.subscribe('/topic/livechat', onMessage);
+    }
+
+    function onError() {
+
+    }
+
+    function connectWithBroker(){
+        var socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, onConnect, onError);
+    }
+</script>
+</body>
+</html>
